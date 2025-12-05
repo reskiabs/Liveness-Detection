@@ -15,11 +15,14 @@ export default function App() {
 
   const frameProcessor = useFrameProcessor((frame) => {
     "worklet";
-    const faces = detectFaces(frame);
-    if (faces === "duplicate_faces") {
+    const result = detectFaces(frame);
+
+    if (result.status === "duplicate_faces") {
       console.log("❌ Multiple faces detected!");
-    } else if (faces === 1) {
-      console.log("✅ One face detected");
+    } else if (result.status === "face_detected") {
+      // console.log(`✅ Face detected`);
+      console.log(`Left eye: ${result.leftEyeOpen ? "Open" : "Closed"}`);
+      console.log(`Right eye: ${result.rightEyeOpen ? "Open" : "Closed"}`);
     } else {
       console.log("⚠️ No face detected");
     }
@@ -55,7 +58,9 @@ export default function App() {
         style={styles.button}
         onPress={() => setIsCameraActive(!isCameraActive)}
       >
-        <Text style={styles.buttonText}>Toggle Camera</Text>
+        <Text style={styles.buttonText}>
+          {isCameraActive ? "Stop" : "Start"}
+        </Text>
       </TouchableOpacity>
     </View>
   );

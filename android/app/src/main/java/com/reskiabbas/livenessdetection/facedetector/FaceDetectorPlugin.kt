@@ -16,11 +16,12 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
         FaceDetectorOptions.Builder()
             .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
             .setMinFaceSize(0.15f)
+            .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
             .build()
     )
     
     private val isProcessing = AtomicBoolean(false)
-    private val lastResult = AtomicReference<Any>(0)
+    private val lastResult = AtomicReference<Any>(mapOf("faceCount" to 0))
 
     @SuppressLint("UnsafeOptInUsageError")
     override fun callback(frame: Frame, arguments: Map<String, Any>?): Any {
@@ -37,9 +38,34 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
         detector.process(inputImage)
             .addOnSuccessListener { faces ->
                 val result = when {
-                    faces.size > 1 -> "duplicate_faces"
-                    else -> faces.size
+                    faces.size > 1 -> mapOf(
+                        "faceCount" to faces.size,
+                        "status" to "duplicate_faces"
+                    )
+                    faces.size == 1 -> {
+                        val face = faces[0]
+                        
+                        // Deteksi mata terbuka/tertutup
+                        val leftEyeOpenProb = face.leftEyeOpenProbability ?: -1f
+                        val rightEyeOpenProb = face.rightEyeOpenProbability ?: -1f
+                        
+                        // Threshold: mata dianggap tertutup jika probability < 0.4
+                        val leftEyeOpen = leftEyeOpenProb > 0.4f
+                        val rightEyeOpen = rightEyeOpenProb > 0.4f
+                        
+                        mapOf(
+                            "faceCount" to 1,
+                            "status" to "face_detected",
+                            "leftEyeOpen" to leftEyeOpen,
+                            "rightEyeOpen" to rightEyeOpen
+                        )
+                    }
+                    else -> mapOf(
+                        "faceCount" to 0,
+                        "status" to "no_face"
+                    )
                 }
+                
                 lastResult.set(result)
                 isProcessing.set(false)
             }
