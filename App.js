@@ -4,12 +4,20 @@ import {
   Camera,
   useCameraDevice,
   useCameraPermission,
+  useFrameProcessor,
 } from "react-native-vision-camera";
+import { detectFaces } from "./hooks/useDetectFaces";
 
 export default function App() {
   const device = useCameraDevice("front");
   const { hasPermission, requestPermission } = useCameraPermission();
   const [isCameraActive, setIsCameraActive] = useState(false);
+
+  const frameProcessor = useFrameProcessor((frame) => {
+    "worklet";
+    const faces = detectFaces(frame);
+    console.log(`Faces in Frame: ${faces}`);
+  }, []);
 
   if (!hasPermission)
     return (
@@ -30,7 +38,12 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Camera style={styles.camera} device={device} isActive={isCameraActive} />
+      <Camera
+        style={styles.camera}
+        device={device}
+        frameProcessor={frameProcessor}
+        isActive={isCameraActive}
+      />
 
       <TouchableOpacity
         style={styles.button}
