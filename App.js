@@ -20,9 +20,9 @@ export default function App() {
     if (result.status === "duplicate_faces") {
       console.log("❌ Multiple faces");
     } else if (result.status === "face_detected") {
-      console.log(
-        `✅ Face - Eyes: ${result.eyesOpen ? "Open 👁️" : "Closed 😑"}`
-      );
+      const eyes = result.eyesOpen ? "Open 👁️" : "Closed 😑";
+      const smile = result.isSmiling ? "Smiling 😊" : "Neutral 😐";
+      console.log(`Face - Eyes: ${eyes}, ${smile}`);
     } else {
       console.log("⚠️ No face");
     }

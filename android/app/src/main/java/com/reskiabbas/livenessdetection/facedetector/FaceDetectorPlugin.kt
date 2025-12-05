@@ -47,14 +47,19 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
                         
                         val leftEyeOpenProb = face.leftEyeOpenProbability ?: -1f
                         val rightEyeOpenProb = face.rightEyeOpenProbability ?: -1f
+                        val smilingProb = face.smilingProbability ?: -1f
                         
                         // Kedua mata terbuka jika probability > 0.4
                         val bothEyesOpen = leftEyeOpenProb > 0.4f && rightEyeOpenProb > 0.4f
                         
+                        // Senyum jika probability > 0.5
+                        val isSmiling = smilingProb > 0.5f
+                        
                         mapOf(
                             "faceCount" to 1,
                             "status" to "face_detected",
-                            "eyesOpen" to bothEyesOpen
+                            "eyesOpen" to bothEyesOpen,
+                            "isSmiling" to isSmiling
                         )
                     }
                     else -> mapOf(
