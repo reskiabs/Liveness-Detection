@@ -18,13 +18,13 @@ export default function App() {
     const result = detectFaces(frame);
 
     if (result.status === "duplicate_faces") {
-      console.log("❌ Multiple faces detected!");
+      console.log("❌ Multiple faces");
     } else if (result.status === "face_detected") {
-      // console.log(`✅ Face detected`);
-      console.log(`Left eye: ${result.leftEyeOpen ? "Open" : "Closed"}`);
-      console.log(`Right eye: ${result.rightEyeOpen ? "Open" : "Closed"}`);
+      console.log(
+        `✅ Face - Eyes: ${result.eyesOpen ? "Open 👁️" : "Closed 😑"}`
+      );
     } else {
-      console.log("⚠️ No face detected");
+      console.log("⚠️ No face");
     }
   }, []);
 
@@ -59,7 +59,7 @@ export default function App() {
         onPress={() => setIsCameraActive(!isCameraActive)}
       >
         <Text style={styles.buttonText}>
-          {isCameraActive ? "Stop" : "Start"}
+          {isCameraActive ? "Stop" : "Start"} Camera
         </Text>
       </TouchableOpacity>
     </View>
@@ -87,12 +87,12 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: "#007AFF",
     paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 10,
+    paddingVertical: 10,
+    borderRadius: 8,
   },
   buttonText: {
     color: "white",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "500",
   },
 });

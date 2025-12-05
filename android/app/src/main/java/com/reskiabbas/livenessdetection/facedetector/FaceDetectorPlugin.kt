@@ -45,19 +45,16 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
                     faces.size == 1 -> {
                         val face = faces[0]
                         
-                        // Deteksi mata terbuka/tertutup
                         val leftEyeOpenProb = face.leftEyeOpenProbability ?: -1f
                         val rightEyeOpenProb = face.rightEyeOpenProbability ?: -1f
                         
-                        // Threshold: mata dianggap tertutup jika probability < 0.4
-                        val leftEyeOpen = leftEyeOpenProb > 0.4f
-                        val rightEyeOpen = rightEyeOpenProb > 0.4f
+                        // Kedua mata terbuka jika probability > 0.4
+                        val bothEyesOpen = leftEyeOpenProb > 0.4f && rightEyeOpenProb > 0.4f
                         
                         mapOf(
                             "faceCount" to 1,
                             "status" to "face_detected",
-                            "leftEyeOpen" to leftEyeOpen,
-                            "rightEyeOpen" to rightEyeOpen
+                            "eyesOpen" to bothEyesOpen
                         )
                     }
                     else -> mapOf(
