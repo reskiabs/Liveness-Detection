@@ -16,7 +16,13 @@ export default function App() {
   const frameProcessor = useFrameProcessor((frame) => {
     "worklet";
     const faces = detectFaces(frame);
-    console.log(`Faces in Frame: ${faces}`);
+    if (faces === "duplicate_faces") {
+      console.log("❌ Multiple faces detected!");
+    } else if (faces === 1) {
+      console.log("✅ One face detected");
+    } else {
+      console.log("⚠️ No face detected");
+    }
   }, []);
 
   if (!hasPermission)
