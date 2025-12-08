@@ -31,12 +31,12 @@ public class FaceDetectorPlugin: FrameProcessorPlugin {
         let buffer = frame.buffer
         let orientation = frame.orientation
         
-        // Convert orientation to ML Kit format
-        let imageOrientation = getImageOrientation(from: orientation)
-        
         // Create VisionImage from buffer
         let visionImage = VisionImage(buffer: buffer)
-        visionImage.orientation = imageOrientation
+        
+        // IMPORTANT: Set correct orientation for front/back camera
+        // For react-native-vision-camera, typically need .right for portrait mode
+        visionImage.orientation = .right
         
         // Start processing
         isProcessing = true
