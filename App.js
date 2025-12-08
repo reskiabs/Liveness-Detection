@@ -115,6 +115,7 @@ export default function App() {
     (frame) => {
       "worklet";
       const result = detectFaces(frame);
+      console.log("result", result.status);
 
       if (result.status === "duplicate_faces") {
         // Handle multiple faces

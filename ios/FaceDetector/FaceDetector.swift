@@ -1,13 +1,24 @@
 import VisionCamera
-import Vision
+import MLKitVision
+import MLKitFaceDetection
 
 @objc(FaceDetectorPlugin)
 public class FaceDetectorPlugin: FrameProcessorPlugin {
     
+    private let detector: FaceDetector
     private var isProcessing = false
     private var lastResult: [String: Any] = ["faceCount": 0]
     
     public override init(proxy: VisionCameraProxyHolder, options: [AnyHashable: Any]! = [:]) {
+        // Configure ML Kit Face Detector options (same as Android)
+        let detectorOptions = FaceDetectorOptions()
+        detectorOptions.performanceMode = .accurate
+        detectorOptions.landmarkMode = .all
+        detectorOptions.classificationMode = .all
+        detectorOptions.minFaceSize = 0.15
+        
+        self.detector = FaceDetector.faceDetector(options: detectorOptions)
+        
         super.init(proxy: proxy, options: options)
     }
     
@@ -20,14 +31,18 @@ public class FaceDetectorPlugin: FrameProcessorPlugin {
         let buffer = frame.buffer
         let orientation = frame.orientation
         
-        // Convert orientation
+        // Convert orientation to ML Kit format
         let imageOrientation = getImageOrientation(from: orientation)
+        
+        // Create VisionImage from buffer
+        let visionImage = VisionImage(buffer: buffer)
+        visionImage.orientation = imageOrientation
         
         // Start processing
         isProcessing = true
         
-        // Create Vision request
-        let request = VNDetectFaceLandmarksRequest { [weak self] request, error in
+        // Process image with ML Kit Face Detector
+        detector.process(visionImage) { [weak self] faces, error in
             guard let self = self else { return }
             
             if let error = error {
@@ -36,35 +51,22 @@ public class FaceDetectorPlugin: FrameProcessorPlugin {
                 return
             }
             
-            guard let observations = request.results as? [VNFaceObservation] else {
+            guard let faces = faces else {
                 self.lastResult = ["faceCount": 0, "status": "no_face"]
                 self.isProcessing = false
                 return
             }
             
-            let result = self.processFaceObservations(observations)
+            let result = self.processFaces(faces)
             self.lastResult = result
             self.isProcessing = false
-        }
-        
-        // Configure request
-        request.revision = VNDetectFaceLandmarksRequestRevision3
-        
-        // Perform request
-        let handler = VNImageRequestHandler(cvPixelBuffer: buffer, orientation: imageOrientation, options: [:])
-        
-        do {
-            try handler.perform([request])
-        } catch {
-            print("Failed to perform face detection: \(error.localizedDescription)")
-            isProcessing = false
         }
         
         return lastResult
     }
     
-    private func processFaceObservations(_ observations: [VNFaceObservation]) -> [String: Any] {
-        switch observations.count {
+    private func processFaces(_ faces: [Face]) -> [String: Any] {
+        switch faces.count {
         case 0:
             return [
                 "faceCount": 0,
@@ -72,19 +74,23 @@ public class FaceDetectorPlugin: FrameProcessorPlugin {
             ]
             
         case 1:
-            let face = observations[0]
+            let face = faces[0]
             
-            // Eye detection
-            let leftEyeOpen = isEyeOpen(face.landmarks?.leftEye)
-            let rightEyeOpen = isEyeOpen(face.landmarks?.rightEye)
-            let bothEyesOpen = leftEyeOpen && rightEyeOpen
+            // Eye open probability (same as Android)
+            let leftEyeOpenProb = face.hasLeftEyeOpenProbability ? face.leftEyeOpenProbability : -1.0
+            let rightEyeOpenProb = face.hasRightEyeOpenProbability ? face.rightEyeOpenProbability : -1.0
+            let smilingProb = face.hasSmilingProbability ? face.smilingProbability : -1.0
             
-            // Smile detection (approximate using mouth landmarks)
-            let isSmiling = detectSmile(face)
+            let bothEyesOpen = leftEyeOpenProb > 0.4 && rightEyeOpenProb > 0.4
+            let isSmiling = smilingProb > 0.5
             
-            // Face orientation (yaw and roll)
-            let yaw = abs(face.yaw?.doubleValue ?? 0.0) > 0.26 // ~15 degrees in radians
-            let roll = abs(face.roll?.doubleValue ?? 0.0) > 0.26 // ~15 degrees in radians
+            // Face orientation (same threshold as Android)
+            let eulerY = Double(face.headEulerAngleY)
+            let eulerZ = Double(face.headEulerAngleZ)
+            
+            // true = sedang menoleh/miring, false = lurus
+            let yaw = eulerY < -15.0 || eulerY > 15.0  // true jika menoleh kiri/kanan
+            let roll = eulerZ < -15.0 || eulerZ > 15.0 // true jika miring
             
             return [
                 "faceCount": 1,
@@ -97,58 +103,15 @@ public class FaceDetectorPlugin: FrameProcessorPlugin {
             
         default:
             return [
-                "faceCount": observations.count,
+                "faceCount": faces.count,
                 "status": "duplicate_faces"
             ]
         }
     }
     
-    private func isEyeOpen(_ eye: VNFaceLandmarkRegion2D?) -> Bool {
-        guard let eye = eye else { return false }
-        
-        // Calculate eye aspect ratio (EAR)
-        let points = eye.normalizedPoints
-        if points.count < 6 { return false }
-        
-        // Simple heuristic: if eye landmarks are detected, assume eye is open
-        // More sophisticated: calculate vertical vs horizontal distance
-        let topPoint = points[1]
-        let bottomPoint = points[4]
-        let leftPoint = points[0]
-        let rightPoint = points[3]
-        
-        let verticalDist = abs(topPoint.y - bottomPoint.y)
-        let horizontalDist = abs(rightPoint.x - leftPoint.x)
-        
-        let ear = verticalDist / horizontalDist
-        
-        // Threshold: eye is open if EAR > 0.2
-        return ear > 0.2
-    }
-    
-    private func detectSmile(_ face: VNFaceObservation) -> Bool {
-        guard let outerLips = face.landmarks?.outerLips else { return false }
-        
-        let points = outerLips.normalizedPoints
-        if points.count < 8 { return false }
-        
-        // Calculate mouth width vs height ratio
-        // A smile typically has a wider mouth
-        let leftCorner = points[0]
-        let rightCorner = points[points.count / 2]
-        let topLip = points[points.count / 4]
-        let bottomLip = points[3 * points.count / 4]
-        
-        let width = abs(rightCorner.x - leftCorner.x)
-        let height = abs(topLip.y - bottomLip.y)
-        
-        let ratio = width / height
-        
-        // Threshold: smiling if ratio > 3.0
-        return ratio > 3.0
-    }
-    
-    private func getImageOrientation(from orientation: UIImage.Orientation) -> CGImagePropertyOrientation {
+    private func getImageOrientation(from orientation: UIImage.Orientation) -> UIImage.Orientation {
+        // For camera frames, typically need to adjust orientation
+        // ML Kit expects the orientation that makes the image upright
         switch orientation {
         case .up:
             return .up

@@ -14,8 +14,8 @@
 		C1C1E2FC0B157C5BC81557D2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A31BD1D8D4A5B0B8DE886DB3 /* PrivacyInfo.xcprivacy */; };
 		C85E548B1F29F0E321FCABBF /* libPods-livenessdetection.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EE7ED5CA177E818C74702227 /* libPods-livenessdetection.a */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
-		FFFE3FD631D44D82A8FBF442 /* FaceDetector.m in Sources */ = {isa = PBXBuildFile; fileRef = 882D51B9A0B844D79270FF2F /* FaceDetector.m */; };
 		F7C6BFDDF12A48F39DF100BD /* FaceDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7646A8F5BF946B7AABC3A0C /* FaceDetector.swift */; };
+		FFFE3FD631D44D82A8FBF442 /* FaceDetector.m in Sources */ = {isa = PBXBuildFile; fileRef = 882D51B9A0B844D79270FF2F /* FaceDetector.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,16 +24,16 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = livenessdetection/Info.plist; sourceTree = "<group>"; };
 		30EEC3C23F5D38D4175A550A /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-livenessdetection/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		7B0E38E015891C67CFE66AD5 /* Pods-livenessdetection.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-livenessdetection.release.xcconfig"; path = "Target Support Files/Pods-livenessdetection/Pods-livenessdetection.release.xcconfig"; sourceTree = "<group>"; };
+		882D51B9A0B844D79270FF2F /* FaceDetector.m */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.c.objc; name = FaceDetector.m; path = FaceDetector.m; sourceTree = "<group>"; };
 		914A15A5E462E6FD8F228DC2 /* Pods-livenessdetection.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-livenessdetection.debug.xcconfig"; path = "Target Support Files/Pods-livenessdetection/Pods-livenessdetection.debug.xcconfig"; sourceTree = "<group>"; };
 		A31BD1D8D4A5B0B8DE886DB3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = livenessdetection/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		A7646A8F5BF946B7AABC3A0C /* FaceDetector.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = FaceDetector.swift; path = FaceDetector.swift; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = livenessdetection/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		EE7ED5CA177E818C74702227 /* libPods-livenessdetection.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-livenessdetection.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = livenessdetection/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* livenessdetection-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "livenessdetection-Bridging-Header.h"; path = "livenessdetection/livenessdetection-Bridging-Header.h"; sourceTree = "<group>"; };
-		882D51B9A0B844D79270FF2F /* FaceDetector.m */ = {isa = PBXFileReference; name = "FaceDetector.m"; path = "FaceDetector.m"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
-		A7646A8F5BF946B7AABC3A0C /* FaceDetector.swift */ = {isa = PBXFileReference; name = "FaceDetector.swift"; path = "FaceDetector.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,6 +87,16 @@
 			name = livenessdetection;
 			sourceTree = "<group>";
 		};
+		3DA268F48782487C8E00E007 /* FaceDetector */ = {
+			isa = PBXGroup;
+			children = (
+				882D51B9A0B844D79270FF2F /* FaceDetector.m */,
+				A7646A8F5BF946B7AABC3A0C /* FaceDetector.swift */,
+			);
+			name = FaceDetector;
+			path = FaceDetector;
+			sourceTree = "<group>";
+		};
 		7DBAC115FAA411CD3F8AB083 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -137,16 +147,6 @@
 			path = livenessdetection/Supporting;
 			sourceTree = "<group>";
 		};
-		3DA268F48782487C8E00E007 /* FaceDetector */ = {
-			isa = PBXGroup;
-			children = (
-				882D51B9A0B844D79270FF2F /* FaceDetector.m */,
-				A7646A8F5BF946B7AABC3A0C /* FaceDetector.swift */,
-			);
-			name = FaceDetector;
-			path = FaceDetector;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -181,7 +181,9 @@
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
+						DevelopmentTeam = D5W4T7G83N;
 						LastSwiftMigration = 1250;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -288,6 +290,14 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-livenessdetection/Pods-livenessdetection-resources.sh",
+				"${PODS_CONFIGURATION_BUILD_DIR}/GTMSessionFetcher/GTMSessionFetcher_Core_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/GoogleDataTransport/GoogleDataTransport_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/GoogleToolboxForMac/GoogleToolboxForMac_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/GoogleToolboxForMac/GoogleToolboxForMac_Logger_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/GoogleUtilities/GoogleUtilities_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/MLKitFaceDetection/GoogleMVFaceDetectorResources.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/PromisesObjC/FBLPromises_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/nanopb/nanopb_Privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
@@ -296,6 +306,14 @@
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GTMSessionFetcher_Core_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleDataTransport_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleToolboxForMac_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleToolboxForMac_Logger_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleUtilities_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleMVFaceDetectorResources.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/FBLPromises_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/nanopb_Privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoConstants_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoFileSystem_privacy.bundle",
@@ -353,7 +371,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = livenessdetection/livenessdetection.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = D5W4T7G83N;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -389,7 +410,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = livenessdetection/livenessdetection.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = D5W4T7G83N;
 				INFOPLIST_FILE = livenessdetection/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
