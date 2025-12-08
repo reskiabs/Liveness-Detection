@@ -24,8 +24,8 @@ export default function App() {
   const instructions = useRef([
     { id: "blink", text: "Kedipkan mata Anda" },
     { id: "smile", text: "Tersenyum" },
-    { id: "yaw", text: "Tolehkan kepala ke kiri atau kanan" },
-    { id: "roll", text: "Miringkan kepala ke kiri atau kanan" },
+    { id: "yaw", text: "Tolehkan kepala" },
+    { id: "roll", text: "Miringkan kepala" },
   ]).current;
 
   // Shuffle and get next instruction
@@ -173,7 +173,7 @@ export default function App() {
       >
         <Text style={styles.buttonText}>
           {instruction === "Liveness Selesai"
-            ? "✅ Selesai - Mulai Lagi"
+            ? "Selesai - Mulai Lagi"
             : isCameraActive
             ? "Sedang Berjalan..."
             : "Start Liveness"}
