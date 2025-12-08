@@ -14,9 +14,10 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
 
     private val detector = FaceDetection.getClient(
         FaceDetectorOptions.Builder()
-            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
-            .setMinFaceSize(0.15f)
+            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
+            .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
             .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
+            .setMinFaceSize(0.15f)
             .build()
     )
     
@@ -49,17 +50,24 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
                         val rightEyeOpenProb = face.rightEyeOpenProbability ?: -1f
                         val smilingProb = face.smilingProbability ?: -1f
                         
-                        // Kedua mata terbuka jika probability > 0.4
                         val bothEyesOpen = leftEyeOpenProb > 0.4f && rightEyeOpenProb > 0.4f
-                        
-                        // Senyum jika probability > 0.5
                         val isSmiling = smilingProb > 0.5f
+                        
+                        // Face orientation
+                        val eulerY = face.headEulerAngleY.toDouble()
+                        val eulerZ = face.headEulerAngleZ.toDouble()
+                        
+                        // true = sedang menoleh/miring, false = lurus
+                        val yaw = eulerY !in -15.0..15.0   // true jika menoleh kiri/kanan
+                        val roll = eulerZ !in -15.0..15.0  // true jika miring
                         
                         mapOf(
                             "faceCount" to 1,
                             "status" to "face_detected",
                             "eyesOpen" to bothEyesOpen,
-                            "isSmiling" to isSmiling
+                            "isSmiling" to isSmiling,
+                            "yaw" to yaw,
+                            "roll" to roll
                         )
                     }
                     else -> mapOf(

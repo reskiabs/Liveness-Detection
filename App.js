@@ -6,25 +6,38 @@ import {
   useCameraPermission,
   useFrameProcessor,
 } from "react-native-vision-camera";
+import { Worklets } from "react-native-worklets-core";
 import { detectFaces } from "./hooks/useDetectFaces";
 
 export default function App() {
   const device = useCameraDevice("front");
   const { hasPermission, requestPermission } = useCameraPermission();
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [instructions, setInstructions] = useState("");
+
+  const onFaceDetected = Worklets.createRunOnJS((message) => {
+    setInstructions(message);
+  });
 
   const frameProcessor = useFrameProcessor((frame) => {
     "worklet";
     const result = detectFaces(frame);
-
-    if (result.status === "duplicate_faces") {
-      console.log("❌ Multiple faces");
-    } else if (result.status === "face_detected") {
-      const eyes = result.eyesOpen ? "Open 👁️" : "Closed 😑";
-      const smile = result.isSmiling ? "Smiling 😊" : "Neutral 😐";
-      console.log(`Face - Eyes: ${eyes}, ${smile}`);
-    } else {
-      console.log("⚠️ No face");
+    if (result.status === "face_detected") {
+      if (!result.yaw && !result.roll) {
+        onFaceDetected("Menoleh atau Miringkan Kepala");
+      }
+      if (result.yaw) {
+        onFaceDetected("Miringkan Kepala ke kiri atau ke kanan");
+      }
+      if (result.roll) {
+        onFaceDetected("Menoleh ke kiri atau ke kanan");
+      }
+      if (result.isSmiling) {
+        onFaceDetected("Tutup Mata");
+      }
+      if (!result.eyesOpen) {
+        onFaceDetected("Tersenyum");
+      }
     }
   }, []);
 
@@ -47,6 +60,9 @@ export default function App() {
 
   return (
     <View style={styles.container}>
+      <View>
+        <Text style={styles.instruction}>{instructions}</Text>
+      </View>
       <Camera
         style={styles.camera}
         device={device}
@@ -83,6 +99,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "white",
     marginBottom: 20,
+  },
+  instruction: {
+    fontSize: 20,
+    fontWeight: "500",
+    marginBottom: 10,
   },
   button: {
     backgroundColor: "#007AFF",
