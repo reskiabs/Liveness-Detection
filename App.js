@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import {
   Camera,
@@ -13,33 +13,120 @@ export default function App() {
   const device = useCameraDevice("front");
   const { hasPermission, requestPermission } = useCameraPermission();
   const [isCameraActive, setIsCameraActive] = useState(false);
-  const [instructions, setInstructions] = useState("");
+  const [instruction, setInstruction] = useState("Tekan Start untuk memulai");
 
-  const onFaceDetected = Worklets.createRunOnJS((message) => {
-    setInstructions(message);
+  // Track completed instructions
+  const [completedInstructions, setCompletedInstructions] = useState(new Set());
+  const [currentTask, setCurrentTask] = useState(null);
+  const [isTaskCompleted, setIsTaskCompleted] = useState(false);
+
+  // All available instructions
+  const instructions = useRef([
+    { id: "blink", text: "Kedipkan mata Anda" },
+    { id: "smile", text: "Tersenyum" },
+    { id: "yaw", text: "Tolehkan kepala ke kiri atau kanan" },
+    { id: "roll", text: "Miringkan kepala ke kiri atau kanan" },
+  ]).current;
+
+  // Shuffle and get next instruction
+  const getNextInstruction = () => {
+    const remaining = instructions.filter(
+      (inst) => !completedInstructions.has(inst.id)
+    );
+
+    if (remaining.length === 0) {
+      // All completed
+      setInstruction("Liveness Selesai");
+      setIsCameraActive(false);
+      setCurrentTask(null);
+      return;
+    }
+
+    // Random instruction from remaining
+    const randomIndex = Math.floor(Math.random() * remaining.length);
+    const nextTask = remaining[randomIndex];
+
+    setCurrentTask(nextTask);
+    setInstruction(nextTask.text);
+    setIsTaskCompleted(false);
+  };
+
+  // Start liveness detection
+  const startLiveness = () => {
+    setCompletedInstructions(new Set());
+    setIsCameraActive(true);
+    setIsTaskCompleted(false);
+
+    // Delay to ensure camera is active
+    setTimeout(() => {
+      getNextInstruction();
+    }, 500);
+  };
+
+  // Worklet to check task completion
+  const checkTaskCompletion = Worklets.createRunOnJS((taskId, result) => {
+    if (isTaskCompleted) return; // Already completed
+
+    let completed = false;
+
+    switch (taskId) {
+      case "blink":
+        // Check if eyes were open then closed
+        if (!result.eyesOpen) {
+          completed = true;
+        }
+        break;
+
+      case "smile":
+        if (result.isSmiling) {
+          completed = true;
+        }
+        break;
+
+      case "yaw":
+        if (result.yaw) {
+          completed = true;
+        }
+        break;
+
+      case "roll":
+        if (result.roll) {
+          completed = true;
+        }
+        break;
+    }
+
+    if (completed) {
+      setIsTaskCompleted(true);
+      setCompletedInstructions((prev) => {
+        const newSet = new Set(prev);
+        newSet.add(taskId);
+        return newSet;
+      });
+
+      // Move to next instruction after delay
+      setTimeout(() => {
+        getNextInstruction();
+      }, 1000);
+    }
   });
 
-  const frameProcessor = useFrameProcessor((frame) => {
-    "worklet";
-    const result = detectFaces(frame);
-    if (result.status === "face_detected") {
-      if (!result.yaw && !result.roll) {
-        onFaceDetected("Menoleh atau Miringkan Kepala");
+  const frameProcessor = useFrameProcessor(
+    (frame) => {
+      "worklet";
+      const result = detectFaces(frame);
+
+      if (result.status === "duplicate_faces") {
+        // Handle multiple faces
+        return;
       }
-      if (result.yaw) {
-        onFaceDetected("Miringkan Kepala ke kiri atau ke kanan");
+
+      if (result.status === "face_detected" && currentTask) {
+        checkTaskCompletion(currentTask.id, result);
       }
-      if (result.roll) {
-        onFaceDetected("Menoleh ke kiri atau ke kanan");
-      }
-      if (result.isSmiling) {
-        onFaceDetected("Tutup Mata");
-      }
-      if (!result.eyesOpen) {
-        onFaceDetected("Tersenyum");
-      }
-    }
-  }, []);
+    },
+    [currentTask, isTaskCompleted]
+  );
 
   if (!hasPermission)
     return (
@@ -60,9 +147,13 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <View>
-        <Text style={styles.instruction}>{instructions}</Text>
+      <View style={styles.instructionContainer}>
+        <Text style={styles.instruction}>{instruction}</Text>
+        <Text style={styles.progress}>
+          Progress: {completedInstructions.size}/{instructions.length}
+        </Text>
       </View>
+
       <Camera
         style={styles.camera}
         device={device}
@@ -71,11 +162,21 @@ export default function App() {
       />
 
       <TouchableOpacity
-        style={styles.button}
-        onPress={() => setIsCameraActive(!isCameraActive)}
+        style={[
+          styles.button,
+          !isCameraActive && instruction === "Liveness Selesai"
+            ? styles.successButton
+            : null,
+        ]}
+        onPress={startLiveness}
+        disabled={isCameraActive}
       >
         <Text style={styles.buttonText}>
-          {isCameraActive ? "Stop" : "Start"} Camera
+          {instruction === "Liveness Selesai"
+            ? "✅ Selesai - Mulai Lagi"
+            : isCameraActive
+            ? "Sedang Berjalan..."
+            : "Start Liveness"}
         </Text>
       </TouchableOpacity>
     </View>
@@ -87,33 +188,60 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: "#f5f5f5",
+    paddingHorizontal: 20,
   },
-
-  camera: {
-    width: 300,
-    height: 300,
+  instructionContainer: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderRadius: 12,
     marginBottom: 20,
-  },
-  text: {
-    fontSize: 20,
-    color: "white",
-    marginBottom: 20,
+    width: "100%",
+    maxWidth: 400,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   instruction: {
     fontSize: 20,
-    fontWeight: "500",
-    marginBottom: 10,
+    fontWeight: "600",
+    textAlign: "center",
+    color: "#333",
+    marginBottom: 8,
+  },
+  progress: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
+  camera: {
+    width: 300,
+    height: 400,
+    borderRadius: 12,
+    marginBottom: 20,
+    overflow: "hidden",
+  },
+  text: {
+    fontSize: 18,
+    color: "#333",
+    marginBottom: 20,
   },
   button: {
     backgroundColor: "#007AFF",
     paddingHorizontal: 30,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 15,
+    borderRadius: 10,
+    minWidth: 200,
+  },
+  successButton: {
+    backgroundColor: "#34C759",
   },
   buttonText: {
     color: "white",
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
