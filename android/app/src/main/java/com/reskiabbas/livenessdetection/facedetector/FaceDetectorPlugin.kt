@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
+import com.google.mlkit.vision.face.FaceLandmark
 import com.mrousavy.camera.frameprocessors.Frame
 import com.mrousavy.camera.frameprocessors.FrameProcessorPlugin
 import com.mrousavy.camera.frameprocessors.VisionCameraProxy
@@ -18,7 +19,7 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
             .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
             .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
             .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
-            .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
+            // HAPUS CONTOUR_MODE_ALL - terlalu berat!
             .setMinFaceSize(0.15f)
             .build()
     )
@@ -62,8 +63,8 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
                         val yaw = eulerY !in -15.0..15.0
                         val roll = eulerZ !in -15.0..15.0
                         
-                        // Mouth open detection using contours
-                        val isMouthOpen = detectMouthOpen(face)
+                        // Mouth open detection using landmarks (LEBIH RINGAN!)
+                        val isMouthOpen = detectMouthOpenWithLandmarks(face)
                         
                         mapOf(
                             "faceCount" to 1,
@@ -91,37 +92,29 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
         return lastResult.get()
     }
     
-    private fun detectMouthOpen(face: com.google.mlkit.vision.face.Face): Boolean {
-        // FaceContour constants dari dokumentasi
-        val UPPER_LIP_BOTTOM = 10
-        val LOWER_LIP_TOP = 11
+    private fun detectMouthOpenWithLandmarks(face: com.google.mlkit.vision.face.Face): Boolean {
+        // Get mouth landmarks
+        val mouthBottom = face.getLandmark(FaceLandmark.MOUTH_BOTTOM)?.position
+        val mouthLeft = face.getLandmark(FaceLandmark.MOUTH_LEFT)?.position
+        val mouthRight = face.getLandmark(FaceLandmark.MOUTH_RIGHT)?.position
         
-        // Get mouth contours
-        val upperLipBottom = face.getContour(UPPER_LIP_BOTTOM)?.points
-        val lowerLipTop = face.getContour(LOWER_LIP_TOP)?.points
-        
-        if (upperLipBottom == null || lowerLipTop == null) {
+        if (mouthBottom == null || mouthLeft == null || mouthRight == null) {
             return false
         }
         
-        if (upperLipBottom.isEmpty() || lowerLipTop.isEmpty()) {
-            return false
-        }
+        // Hitung lebar mulut (horizontal distance)
+        val mouthWidth = abs(mouthRight.x - mouthLeft.x)
         
-        // Calculate vertical distance between lips
-        // Ambil titik tengah bibir atas dan bawah
-        val upperLipCenterY = upperLipBottom[upperLipBottom.size / 2].y
-        val lowerLipCenterY = lowerLipTop[lowerLipTop.size / 2].y
+        // Hitung tinggi mulut dari rata-rata posisi corner ke bottom
+        val mouthTopY = (mouthLeft.y + mouthRight.y) / 2
+        val mouthHeight = abs(mouthBottom.y - mouthTopY)
         
-        val lipDistance = abs(lowerLipCenterY - upperLipCenterY)
+        // Ratio tinggi/lebar mulut
+        // Mulut tertutup: ratio kecil (mulut horizontal)
+        // Mulut terbuka: ratio besar (mulut vertical juga terbuka)
+        val mouthAspectRatio = mouthHeight / mouthWidth
         
-        // Calculate face height untuk normalisasi
-        val faceHeight = face.boundingBox.height()
-        
-        // Ratio mulut terbuka terhadap tinggi wajah
-        val mouthOpenRatio = lipDistance / faceHeight
-        
-        // Threshold: jika ratio > 0.04 (4% dari tinggi wajah) = mulut terbuka
-        return mouthOpenRatio > 0.04f
+        // Threshold: ratio > 0.5 = mulut terbuka
+        return mouthAspectRatio > 0.5f
     }
 }
