@@ -26,6 +26,7 @@ export default function App() {
     { id: "smile", text: "Tersenyum" },
     { id: "yaw", text: "Tolehkan kepala" },
     { id: "roll", text: "Miringkan kepala" },
+    { id: "mouth", text: "Buka mulut Anda" },
   ]).current;
 
   // Shuffle and get next instruction
@@ -94,6 +95,10 @@ export default function App() {
           completed = true;
         }
         break;
+
+      case "mouth":
+        if (result.isMouthOpen) completed = true;
+        break;
     }
 
     if (completed) {
@@ -115,6 +120,8 @@ export default function App() {
     (frame) => {
       "worklet";
       const result = detectFaces(frame);
+
+      console.log("result", result);
 
       if (result.status === "duplicate_faces") {
         // Handle multiple faces
