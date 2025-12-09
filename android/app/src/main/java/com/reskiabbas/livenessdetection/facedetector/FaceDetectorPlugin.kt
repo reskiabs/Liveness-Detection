@@ -19,7 +19,6 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
             .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
             .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
             .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
-            // HAPUS CONTOUR_MODE_ALL - terlalu berat!
             .setMinFaceSize(0.15f)
             .build()
     )
@@ -63,9 +62,6 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
                         val yaw = eulerY !in -15.0..15.0
                         val roll = eulerZ !in -15.0..15.0
                         
-                        // Mouth open detection using landmarks (LEBIH RINGAN!)
-                        val isMouthOpen = detectMouthOpenWithLandmarks(face)
-                        
                         mapOf(
                             "faceCount" to 1,
                             "status" to "face_detected",
@@ -92,29 +88,4 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
         return lastResult.get()
     }
     
-    private fun detectMouthOpenWithLandmarks(face: com.google.mlkit.vision.face.Face): Boolean {
-        // Get mouth landmarks
-        val mouthBottom = face.getLandmark(FaceLandmark.MOUTH_BOTTOM)?.position
-        val mouthLeft = face.getLandmark(FaceLandmark.MOUTH_LEFT)?.position
-        val mouthRight = face.getLandmark(FaceLandmark.MOUTH_RIGHT)?.position
-        
-        if (mouthBottom == null || mouthLeft == null || mouthRight == null) {
-            return false
-        }
-        
-        // Hitung lebar mulut (horizontal distance)
-        val mouthWidth = abs(mouthRight.x - mouthLeft.x)
-        
-        // Hitung tinggi mulut dari rata-rata posisi corner ke bottom
-        val mouthTopY = (mouthLeft.y + mouthRight.y) / 2
-        val mouthHeight = abs(mouthBottom.y - mouthTopY)
-        
-        // Ratio tinggi/lebar mulut
-        // Mulut tertutup: ratio kecil (mulut horizontal)
-        // Mulut terbuka: ratio besar (mulut vertical juga terbuka)
-        val mouthAspectRatio = mouthHeight / mouthWidth
-        
-        // Threshold: ratio > 0.5 = mulut terbuka
-        return mouthAspectRatio > 0.5f
-    }
 }
