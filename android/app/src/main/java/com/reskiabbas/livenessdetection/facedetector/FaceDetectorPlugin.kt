@@ -4,13 +4,11 @@ import android.annotation.SuppressLint
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
-import com.google.mlkit.vision.face.FaceLandmark
 import com.mrousavy.camera.frameprocessors.Frame
 import com.mrousavy.camera.frameprocessors.FrameProcessorPlugin
 import com.mrousavy.camera.frameprocessors.VisionCameraProxy
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.math.abs
 
 class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) : FrameProcessorPlugin() {
 
@@ -59,8 +57,9 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
                         val eulerY = face.headEulerAngleY.toDouble()
                         val eulerZ = face.headEulerAngleZ.toDouble()
                         
-                        val yaw = eulerY !in -15.0..15.0
-                        val roll = eulerZ !in -15.0..15.0
+                        // true = sedang menoleh/miring, false = lurus
+                        val yaw = eulerY !in -15.0..15.0   // true jika menoleh kiri/kanan
+                        val roll = eulerZ !in -15.0..15.0  // true jika miring
                         
                         mapOf(
                             "faceCount" to 1,
@@ -68,8 +67,7 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
                             "eyesOpen" to bothEyesOpen,
                             "isSmiling" to isSmiling,
                             "yaw" to yaw,
-                            "roll" to roll,
-                            "isMouthOpen" to isMouthOpen
+                            "roll" to roll
                         )
                     }
                     else -> mapOf(
@@ -87,5 +85,4 @@ class FaceDetectorPlugin(proxy: VisionCameraProxy, options: Map<String, Any>?) :
         
         return lastResult.get()
     }
-    
 }
