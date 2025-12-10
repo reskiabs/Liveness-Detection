@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import {
   Camera,
   useCameraDevice,
@@ -15,17 +15,10 @@ export default function App() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [instruction, setInstruction] = useState("Tekan Start untuk memulai");
 
-  // Camera ref untuk recording dan photo
-  const cameraRef = useRef(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [videoPath, setVideoPath] = useState(null);
-  const [photoPath, setPhotoPath] = useState(null);
-
   // Track completed instructions
-  const completedInstructions = useRef(new Set());
-  const [completedCount, setCompletedCount] = useState(0);
-  const currentTask = useRef(null);
-  const isTaskCompleted = useRef(false);
+  const [completedInstructions, setCompletedInstructions] = useState(new Set());
+  const [currentTask, setCurrentTask] = useState(null);
+  const [isTaskCompleted, setIsTaskCompleted] = useState(false);
 
   // All available instructions
   const instructions = useRef([
@@ -36,14 +29,16 @@ export default function App() {
   ]).current;
 
   // Shuffle and get next instruction
-  const getNextInstruction = async () => {
+  const getNextInstruction = () => {
     const remaining = instructions.filter(
-      (inst) => !completedInstructions.current.has(inst.id)
+      (inst) => !completedInstructions.has(inst.id)
     );
 
     if (remaining.length === 0) {
-      // All completed - stop recording and take photo
-      await stopRecordingAndTakePhoto();
+      // All completed
+      setInstruction("Liveness Selesai");
+      setIsCameraActive(false);
+      setCurrentTask(null);
       return;
     }
 
@@ -51,144 +46,87 @@ export default function App() {
     const randomIndex = Math.floor(Math.random() * remaining.length);
     const nextTask = remaining[randomIndex];
 
-    currentTask.current = nextTask;
+    setCurrentTask(nextTask);
     setInstruction(nextTask.text);
-    isTaskCompleted.current = false;
-  };
-
-  // Start recording video
-  const startRecording = async () => {
-    if (!cameraRef.current) return;
-
-    try {
-      setIsRecording(true);
-      cameraRef.current.startRecording({
-        onRecordingFinished: (video) => {
-          console.log("Video saved to:", video.path);
-          setVideoPath(video.path);
-          setIsRecording(false);
-        },
-        onRecordingError: (error) => {
-          console.error("Recording error:", error);
-          setIsRecording(false);
-        },
-      });
-    } catch (error) {
-      console.error("Failed to start recording:", error);
-      setIsRecording(false);
-    }
-  };
-
-  // Stop recording and take photo
-  const stopRecordingAndTakePhoto = async () => {
-    if (!cameraRef.current) return;
-
-    try {
-      // Stop recording
-      if (isRecording) {
-        await cameraRef.current.stopRecording();
-      }
-
-      // Take photo
-      const photo = await cameraRef.current.takePhoto({
-        qualityPrioritization: "balanced",
-      });
-
-      console.log("Photo saved to:", photo.path);
-      setPhotoPath(photo.path);
-
-      // Update UI
-      setInstruction("Liveness Selesai");
-      setIsCameraActive(false);
-      currentTask.current = null;
-
-      // Show success message
-      Alert.alert(
-        "Liveness Selesai",
-        `Video: ${videoPath}\nPhoto: ${photo.path}`,
-        [{ text: "OK" }]
-      );
-    } catch (error) {
-      console.error("Failed to stop recording or take photo:", error);
-    }
+    setIsTaskCompleted(false);
   };
 
   // Start liveness detection
-  const startLiveness = async () => {
-    completedInstructions.current = new Set();
-    setCompletedCount(0);
+  const startLiveness = () => {
+    setCompletedInstructions(new Set());
     setIsCameraActive(true);
-    isTaskCompleted.current = false;
-    setVideoPath(null);
-    setPhotoPath(null);
+    setIsTaskCompleted(false);
 
-    // Delay to ensure camera is active, then start recording
-    setTimeout(async () => {
-      await startRecording();
+    // Delay to ensure camera is active
+    setTimeout(() => {
       getNextInstruction();
     }, 500);
   };
 
   // Worklet to check task completion
-  const onTaskCompleted = Worklets.createRunOnJS((taskId) => {
-    if (isTaskCompleted.current) return;
+  const checkTaskCompletion = Worklets.createRunOnJS((taskId, result) => {
+    if (isTaskCompleted) return; // Already completed
 
-    isTaskCompleted.current = true;
-    completedInstructions.current.add(taskId);
-    setCompletedCount(completedInstructions.current.size);
+    let completed = false;
 
-    // Move to next instruction after delay
-    setTimeout(() => {
-      getNextInstruction();
-    }, 1000);
+    switch (taskId) {
+      case "blink":
+        // Check if eyes were open then closed
+        if (!result.eyesOpen) {
+          completed = true;
+        }
+        break;
+
+      case "smile":
+        if (result.isSmiling) {
+          completed = true;
+        }
+        break;
+
+      case "yaw":
+        if (result.yaw) {
+          completed = true;
+        }
+        break;
+
+      case "roll":
+        if (result.roll) {
+          completed = true;
+        }
+        break;
+    }
+
+    if (completed) {
+      setIsTaskCompleted(true);
+      setCompletedInstructions((prev) => {
+        const newSet = new Set(prev);
+        newSet.add(taskId);
+        return newSet;
+      });
+
+      // Move to next instruction after delay
+      setTimeout(() => {
+        getNextInstruction();
+      }, 1000);
+    }
   });
 
-  const frameProcessor = useFrameProcessor((frame) => {
-    "worklet";
-    const result = detectFaces(frame);
-
-    if (result.status === "duplicate_faces") {
-      return;
-    }
-
-    if (result.status === "face_detected" && currentTask.current) {
-      const taskId = currentTask.current.id;
-
-      if (isTaskCompleted.current) return;
-
-      let completed = false;
-
-      switch (taskId) {
-        case "blink":
-          if (!result.eyesOpen) {
-            completed = true;
-          }
-          break;
-
-        case "smile":
-          if (result.isSmiling) {
-            completed = true;
-          }
-          break;
-
-        case "yaw":
-          if (result.yaw) {
-            completed = true;
-          }
-          break;
-
-        case "roll":
-          if (result.roll) {
-            completed = true;
-          }
-          break;
+  const frameProcessor = useFrameProcessor(
+    (frame) => {
+      "worklet";
+      const result = detectFaces(frame);
+      console.log(result);
+      if (result.status === "duplicate_faces") {
+        // Handle multiple faces
+        return;
       }
 
-      if (completed) {
-        onTaskCompleted(taskId);
+      if (result.status === "face_detected" && currentTask) {
+        checkTaskCompletion(currentTask.id, result);
       }
-    }
-  }, []);
+    },
+    [currentTask, isTaskCompleted]
+  );
 
   if (!hasPermission)
     return (
@@ -212,24 +150,15 @@ export default function App() {
       <View style={styles.instructionContainer}>
         <Text style={styles.instruction}>{instruction}</Text>
         <Text style={styles.progress}>
-          Progress: {completedCount}/{instructions.length}
+          Progress: {completedInstructions.size}/{instructions.length}
         </Text>
-        {isRecording && (
-          <View style={styles.recordingIndicator}>
-            <View style={styles.recordingDot} />
-            <Text style={styles.recordingText}>Recording...</Text>
-          </View>
-        )}
       </View>
 
       <Camera
-        ref={cameraRef}
         style={styles.camera}
         device={device}
         frameProcessor={frameProcessor}
         isActive={isCameraActive}
-        video={true} // Enable video recording
-        photo={true} // Enable photo capture
       />
 
       <TouchableOpacity
@@ -244,24 +173,12 @@ export default function App() {
       >
         <Text style={styles.buttonText}>
           {instruction === "Liveness Selesai"
-            ? "✅ Selesai - Mulai Lagi"
+            ? "Selesai - Mulai Lagi"
             : isCameraActive
             ? "Sedang Berjalan..."
             : "Start Liveness"}
         </Text>
       </TouchableOpacity>
-
-      {/* Display results */}
-      {videoPath && (
-        <View style={styles.resultContainer}>
-          <Text style={styles.resultText}>Video: {videoPath}</Text>
-        </View>
-      )}
-      {photoPath && (
-        <View style={styles.resultContainer}>
-          <Text style={styles.resultText}>Photo: {photoPath}</Text>
-        </View>
-      )}
     </View>
   );
 }
@@ -299,24 +216,6 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
   },
-  recordingIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 10,
-  },
-  recordingDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#FF3B30",
-    marginRight: 8,
-  },
-  recordingText: {
-    fontSize: 14,
-    color: "#FF3B30",
-    fontWeight: "600",
-  },
   camera: {
     width: 300,
     height: 400,
@@ -344,16 +243,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
-  },
-  resultContainer: {
-    backgroundColor: "#fff",
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 10,
-    maxWidth: 400,
-  },
-  resultText: {
-    fontSize: 12,
-    color: "#666",
   },
 });
