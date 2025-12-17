@@ -11,9 +11,11 @@ import { detectFaces } from "./hooks/useDetectFaces";
 
 export default function App() {
   const device = useCameraDevice("front");
+  const cameraRef = useRef(null);
   const { hasPermission, requestPermission } = useCameraPermission();
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [instruction, setInstruction] = useState("Tekan Start untuk memulai");
+  const [capturedPhoto, setCapturedPhoto] = useState(null);
 
   // Track completed instructions
   const [completedInstructions, setCompletedInstructions] = useState(new Set());
@@ -39,6 +41,8 @@ export default function App() {
       setInstruction("Liveness Selesai");
       setIsCameraActive(false);
       setCurrentTask(null);
+      capturePhoto();
+      c;
       return;
     }
 
@@ -49,6 +53,16 @@ export default function App() {
     setCurrentTask(nextTask);
     setInstruction(nextTask.text);
     setIsTaskCompleted(false);
+  };
+
+  const capturePhoto = async () => {
+    const photo = await cameraRef.current.takePhoto({
+      flash: "off",
+      enableShutterSound: false,
+    });
+
+    const photoUri = `file://${photo.path}`;
+    setCapturedPhoto(photoUri);
   };
 
   // Start liveness detection
@@ -155,10 +169,12 @@ export default function App() {
       </View>
 
       <Camera
+        ref={cameraRef}
         style={styles.camera}
         device={device}
         frameProcessor={frameProcessor}
         isActive={isCameraActive}
+        photo={true}
       />
 
       <TouchableOpacity
